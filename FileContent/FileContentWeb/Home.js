@@ -34,6 +34,10 @@
             // Add a click event handler for the highlight button.
             $('#highlight-button').click(
                 hightlightLongestWord);
+
+            $('#get-ooxml-body').click(getOOXMLBody);
+
+            $('#insert-ooxml-body').click(insertOOXMLBody);
         });
     };
 
@@ -126,5 +130,57 @@
         $("#notificationBody").text(content);
         messageBanner.showBanner();
         messageBanner.toggleExpansion();
+    }
+
+    var ooxml = '';
+
+    function getOOXMLBody() {
+        // Run a batch operation against the Word object model.
+        Word.run(function (context) {
+
+            // Create a proxy object for the document body.
+            var body = context.document.body;
+
+            // Queue a commmand to get the OOXML contents of the body.
+            var bodyOOXML = body.getOoxml();
+
+            // Synchronize the document state by executing the queued commands,
+            // and return a promise to indicate task completion.
+            return context.sync().then(function () {
+                console.log("Body OOXML contents: " + bodyOOXML.value);
+                ooxml = bodyOOXML.value;
+            });
+        })
+        .catch(function (error) {
+            console.log("Error: " + JSON.stringify(error));
+            if (error instanceof OfficeExtension.Error) {
+                console.log("Debug info: " + JSON.stringify(error.debugInfo));
+            }
+        });
+    }
+
+    function insertOOXMLBody() {
+        // Run a batch operation against the Word object model.
+        Word.run(function (context) {
+
+            // Create a proxy object for the document body.
+            var body = context.document.body;
+
+            // Queue a commmand to insert OOXML in to the beginning of the body.
+            //body.insertOoxml("<pkg:package xmlns:pkg='http://schemas.microsoft.com/office/2006/xmlPackage'><pkg:part pkg:name='/_rels/.rels' pkg:contentType='application/vnd.openxmlformats-package.relationships+xml' pkg:padding='512'><pkg:xmlData><Relationships xmlns='http://schemas.openxmlformats.org/package/2006/relationships'><Relationship Id='rId1' Type='http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument' Target='word/document.xml'/></Relationships></pkg:xmlData></pkg:part><pkg:part pkg:name='/word/document.xml' pkg:contentType='application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml'><pkg:xmlData><w:document xmlns:w='http://schemas.openxmlformats.org/wordprocessingml/2006/main' ><w:body><w:p><w:pPr><w:spacing w:before='360' w:after='0' w:line='480' w:lineRule='auto'/><w:rPr><w:color w:val='70AD47' w:themeColor='accent6'/><w:sz w:val='28'/></w:rPr></w:pPr><w:r><w:rPr><w:color w:val='70AD47' w:themeColor='accent6'/><w:sz w:val='28'/></w:rPr><w:t>This text has formatting directly applied to achieve its font size, color, line spacing, and paragraph spacing.</w:t></w:r></w:p></w:body></w:document></pkg:xmlData></pkg:part></pkg:package>", Word.InsertLocation.start);
+            body.insertOoxml(ooxml, Word.InsertLocation.start);
+
+            // Synchronize the document state by executing the queued commands,
+            // and return a promise to indicate task completion.
+            return context.sync().then(function () {
+                console.log('OOXML added to the beginning of the document body.');
+            });
+        })
+        .catch(function (error) {
+            console.log('Error: ' + JSON.stringify(error));
+            if (error instanceof OfficeExtension.Error) {
+                console.log('Debug info: ' + JSON.stringify(error.debugInfo));
+            }
+        });
     }
 })();
